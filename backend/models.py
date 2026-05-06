@@ -37,12 +37,16 @@ class Child(Base):
         back_populates="child"
     )
 
+    stories: Mapped[list["Story"]] = relationship(
+        back_populates="child"
+    )
+
 
 class Product(Base):
     __tablename__ = "produits"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    bare_code: Mapped[int] = mapped_column(Integer)
+    barcode: Mapped[int] = mapped_column(Integer)
     type: Mapped[str] = mapped_column(String)
     name: Mapped[str] = mapped_column(String, nullable=False)
     brand: Mapped[str] = mapped_column(String, nullable=False)
@@ -59,4 +63,16 @@ class Product(Base):
 
     child: Mapped["Child"] = relationship(
         back_populates="products"
+    )
+
+class Story(Base):
+    __tablename__ = "Histoires"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    url_mp3 : Mapped[str] = mapped_column(String,nullable=False)
+    script : Mapped[str] = mapped_column(String,nullable=False)
+
+    id_child: Mapped[int] = mapped_column(ForeignKey("enfants.id"))
+
+    child: Mapped["Child"] = relationship(
+        back_populates="stories"
     )

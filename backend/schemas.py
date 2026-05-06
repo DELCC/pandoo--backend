@@ -20,4 +20,29 @@ class ChildRead(BaseModel):
     name : str
     id_parent : int
 
+class ProductCreate(BaseModel):
+    barcode : int
+    type : str
+    name : str
+    brand : str
+    calories: float
+    calcium: float
+    proteins : float
+    lipids : float
+    salt : float
+
+
+class ProductRead(BaseModel):
+    id : int
+    barcode : int
+    type : str
+    name : str
+    brand : str
+    calories: float
+    calcium: float
+    proteins : float
+    lipids : float
+    salt : float
+    id_child : int
+
 model_config = {"from_attributes": True} # Permet de lire un objet ORM SqlAlchemy
