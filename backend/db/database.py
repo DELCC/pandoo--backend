@@ -4,8 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from models import Base
 
 
-# URL de connexion SQLite
-DATABASE_URL = "sqlite:///./database.db"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+DATABASE_URL = f"sqlite:///{BASE_DIR}/pandoo.db"
 
 
 # Création du moteur SQLAlchemy

@@ -10,8 +10,9 @@ class User(Base):
     __tablename__ = "utilisateurs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    mail: Mapped[str] = mapped_column(String, nullable=False)
-
+    name : Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    password : Mapped[str] = mapped_column(String,nullable=False)
     children: Mapped[list["Child"]] = relationship(
         back_populates="parent"
     )
