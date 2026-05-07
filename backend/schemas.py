@@ -14,10 +14,12 @@ class UserRead(BaseModel):
 class ChildCreate(BaseModel):
     name : str
     age : int
+    id_parent : int
 
 class ChildRead(BaseModel):
     id : int
     name : str
+    age : int
     id_parent : int
 
 class ProductCreate(BaseModel):
@@ -44,5 +46,12 @@ class ProductRead(BaseModel):
     lipids : float
     salt : float
     id_child : int
+
+
+class StoryCreate(BaseModel):
+    pass
+
+class StoryRead(BaseModel):
+    pass
 
 model_config = {"from_attributes": True} # Permet de lire un objet ORM SqlAlchemy

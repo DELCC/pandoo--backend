@@ -51,3 +51,11 @@ def list_all_children(db : Session = Depends(get_db)):
 @router.get("/{parent_id}")
 def list_parent_children(parent_id : int, db : Session = Depends(get_db)):
     return db.query(Child).filter(Child.id_parent == parent_id).all()
+
+@router.put("/{id}")
+def update_child():
+    pass
+
+@router.delete("/{id}")
+def delete_child():
+    pass

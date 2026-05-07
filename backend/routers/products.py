@@ -10,7 +10,7 @@ router = APIRouter(prefix='/products',  tags=["Products"])
 
 
 
-@router.post("/{id_child}",response_model = ProductRead)
+@router.post("/",response_model = ProductRead)
 def add_products(id_child : int, product : ProductCreate ,db : Session = Depends(get_db)):
     child = db.query(Child).filter(id_child == Child.id).first()
 
