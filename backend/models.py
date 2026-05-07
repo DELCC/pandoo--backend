@@ -66,7 +66,7 @@ class Product(Base):
     )
 
 class Story(Base):
-    __tablename__ = "Histoires"
+    __tablename__ = "histoires"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     url_mp3 : Mapped[str] = mapped_column(String,nullable=False)
     script : Mapped[str] = mapped_column(String,nullable=False)
