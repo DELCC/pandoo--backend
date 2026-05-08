@@ -8,7 +8,7 @@ from db.database import get_db
 
 router = APIRouter(prefix='/products', tags=["Products"])
 
-# --- ROUTE POUR ENREGISTRER ---
+# --- ROUTE POUR ENREGISTRER UN PRODUIT (AVEC ANTI-DOUBLON) ---
 @router.post("/", response_model=ProductRead)
 def add_products(id_child: int, product: ProductCreate, db: Session = Depends(get_db)):
     # 1. Vérification si l'enfant existe
@@ -17,17 +17,31 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
     if not child:
         raise HTTPException(
             status_code=404,
-            detail="Child not found"
+            detail="Enfant non trouvé"
         )
 
-    # 2. Création du nouveau produit (AVEC GLUCIDES)
+    # 2. LOGIQUE ANTI-DOUBLON
+    existing_product = db.query(Product).filter(
+        Product.barcode == product.barcode,
+        Product.id_child == id_child
+    ).first()
+
+    if existing_product:
+        # On affiche un message bien visible dans le terminal de l'API
+        print("\n" + "="*50)
+        print(f"   INFO : L'article '{product.name}' (BC: {product.barcode})")
+        print(f"   est DÉJÀ enregistré pour l'enfant ID: {id_child}")
+        print("="*50 + "\n")
+        return existing_product
+
+    # 3. Création du nouveau produit si c'est un nouveau scan pour cet enfant
     new_product = Product(
         barcode=product.barcode,
         type=product.type,
         name=product.name,
         brand=product.brand,
         calories=product.calories,
-        glucides=product.glucides,  # <--- IL MANQUAIT CETTE LIGNE ICI !
+        glucides=product.glucides, 
         calcium=product.calcium,
         proteins=product.proteins,
         lipids=product.lipids,
@@ -41,7 +55,7 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
 
     return new_product
 
-# --- VOIR TOUS LES PRODUITS ---
+# --- VOIR TOUS LES PRODUITS ENREGISTRÉS ---
 @router.get("/", response_model=List[ProductRead])
 def get_all_products(db: Session = Depends(get_db)):
     products = db.query(Product).all()
