@@ -1,16 +1,22 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 # Importation de la base de données et des modèles
-from db.database import engine
+from db.database import engine, get_db # Ajoute get_db ici
 import models
 
 # Importation des routeurs
 from routers import users, children, products
 
+# --- SCHÉMA DE CONNEXION ---
+class LoginData(BaseModel):
+    email: str
+    password: str
+
 # --- CRÉATION DES TABLES ---
-# Cela crée le fichier pandoo.db automatiquement s'il n'existe pas
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -20,21 +26,38 @@ app = FastAPI(
 )
 
 # --- CONFIGURATION CORS ---
-# Permet à ton application Kivy (ou un navigateur) de communiquer avec l'API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # À restreindre en production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- ROUTE LOGIN (À ajouter ici) ---
+@app.post("/login", tags=["Authentication"])
+def login(data: LoginData, db: Session = Depends(get_db)):
+    # On cherche l'utilisateur par email
+    user = db.query(models.User).filter(models.User.email == data.email).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Email non reconnu")
+    
+    if user.password != data.password:
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "status": "success"
+    }
 
 # --- INCLUSION DES ROUTEURS ---
 app.include_router(users.router)
 app.include_router(children.router)
 app.include_router(products.router)
 
-# --- ROUTE RACINE (Correction des accents) ---
 @app.get("/", tags=["Root"])
 async def read_root():
     return JSONResponse(
@@ -42,7 +65,6 @@ async def read_root():
         headers={"Content-Type": "application/json; charset=utf-8"}
     )
 
-# --- POINT D'ENTRÉE ---
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
