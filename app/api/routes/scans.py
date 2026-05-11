@@ -24,7 +24,7 @@ def get_color_rating(nutriscore: str) -> str:
 
 async def fetch_product(barcode: str) -> dict:
     url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(url)
         data = response.json()
         if data.get("status") != 1:
