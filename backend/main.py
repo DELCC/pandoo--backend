@@ -1,26 +1,32 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import text
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-# Importation de la connexion à la base de données
-from db.database import engine, get_db
+# Importation de la base de données et des modèles
+from db.database import engine
+import models
 
-# Importation de tes modèles pour que SQLAlchemy les connaisse
-import models 
-
-# Importation de tes routes
+# Importation des routeurs
 from routers import users, children, products
 
-# --- INITIALISATION DE LA BASE DE DONNÉES ---
-# Cette ligne va lire ton fichier models.py et créer toutes les tables 
-# (utilisateurs, enfants, produits, histoires) si elles n'existent pas encore.
+# --- CRÉATION DES TABLES ---
+# Cela crée le fichier pandoo.db automatiquement s'il n'existe pas
 models.Base.metadata.create_all(bind=engine)
 
-# --- CRÉATION DE L'APPLICATION ---
 app = FastAPI(
     title="Pandoo API",
-    description="Backend pour l'application Pandoo - Scan nutritionnel pour enfants",
-    version="1.0.0"
+    description="Backend pour l'application de nutrition enfantine",
+    version="1.1.0"
+)
+
+# --- CONFIGURATION CORS ---
+# Permet à ton application Kivy (ou un navigateur) de communiquer avec l'API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # À restreindre en production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # --- INCLUSION DES ROUTEURS ---
@@ -28,22 +34,15 @@ app.include_router(users.router)
 app.include_router(children.router)
 app.include_router(products.router)
 
-# --- ROUTES DE TEST ET SANTÉ ---
+# --- ROUTE RACINE (Correction des accents) ---
+@app.get("/", tags=["Root"])
+async def read_root():
+    return JSONResponse(
+        content={"message": "API Pandoo opérationnelle"},
+        headers={"Content-Type": "application/json; charset=utf-8"}
+    )
 
-@app.get("/", tags=["Health"])
-def root():
-    """Vérifie si l'API est en ligne."""
-    return {"message": "API Pandoo opérationnelle"}
-
-@app.get("/test-db", tags=["Health"])
-def test_db(db: Session = Depends(get_db)):
-    """Vérifie si la connexion à la base de données SQLite fonctionne."""
-    try:
-        # Exécute une requête simple
-        db.execute(text("SELECT 1"))
-        return {"status": "success", "message": "Connexion à la base de données OK"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# Pour lancer le serveur :
-# uvicorn main:app --reload
+# --- POINT D'ENTRÉE ---
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
