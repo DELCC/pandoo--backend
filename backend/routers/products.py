@@ -8,10 +8,43 @@ from schemas import ProductCreate, ProductRead
 from models import Product, Child
 from db.database import get_db
 
+# --- IMPORTATION DU CERVEAU DEPUIS MAIN ---
+from main import nutri_db 
+
 router = APIRouter(prefix='/products', tags=["Products"])
 
+# --- FONCTION D'ANALYSE PANDOO ---
+def generer_analyse_pandoo(product, age_enfant: int):
+    # 1. Déterminer la tranche d'âge
+    if age_enfant <= 3: tranche = "1-3_ans"
+    elif age_enfant <= 6: tranche = "4-6_ans"
+    else: tranche = "7-10_ans"
+    
+    # 2. Récupération des données du JSON
+    seuils = nutri_db.get("anc_enfants", {}).get(tranche, {})
+    dictionnaire = nutri_db.get("dictionnaire_pedagogique", {})
+    
+    analyse = {
+        "pandoo_advice": "Analyse terminée !",
+        "tips": [],
+        "alerts": []
+    }
+
+    # Analyse du Calcium
+    cal_val = product.calcium if product.calcium else 0
+    if cal_val >= dictionnaire.get("calcium", {}).get("seuil_riche", 0.12):
+        msg = seuils.get("labels", {}).get("calcium", "C'est bon pour tes os !")
+        analyse["tips"].append(f"{msg}")
+
+    # Analyse du Sucre (Glucides dans ton modèle)
+    glu_val = product.glucides if product.glucides else 0
+    if glu_val >= dictionnaire.get("sucres", {}).get("seuil_alerte", 15.0):
+        analyse["alerts"].append(f"{dictionnaire.get('sucres', {}).get('explication', '')}")
+    
+    return analyse
+
 # --- ROUTE POUR ENREGISTRER UN PRODUIT ---
-@router.post("/", response_model=ProductRead)
+@router.post("/", response_model=None)
 def add_products(id_child: int, product: ProductCreate, db: Session = Depends(get_db)):
     # 1. Vérification si l'enfant existe
     child = db.query(Child).filter(Child.id == id_child).first()
@@ -22,7 +55,7 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
             detail="Enfant non trouvé"
         )
 
-    # 2. LOGIQUE ANTI-DOUBLON (Évite d'enregistrer 2 fois le même scan pour le même enfant)
+    # 2. LOGIQUE ANTI-DOUBLON
     existing_product = db.query(Product).filter(
         Product.barcode == product.barcode,
         Product.id_child == id_child
@@ -30,10 +63,13 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
 
     if existing_product:
         print(f"⚠️ Produit déjà existant : {product.name}")
-        return existing_product
+        pandoo_result = generer_analyse_pandoo(existing_product, child.age)
+        return {
+            "product": existing_product,
+            "analysis": pandoo_result
+        }
 
     # 3. Création du nouveau produit
-    # On s'assure de bien mapper tous les champs reçus du frontend
     new_product = Product(
         barcode=product.barcode,
         type=product.type,
@@ -52,8 +88,16 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
         db.add(new_product)
         db.commit()
         db.refresh(new_product)
+        
+        # --- GÉNÉRATION DE L'ANALYSE ---
+        pandoo_result = generer_analyse_pandoo(new_product, child.age)
+        
         print(f"✅ Produit enregistré avec succès : {new_product.name}")
-        return new_product
+        
+        return {
+            "product": new_product,
+            "analysis": pandoo_result
+        }
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erreur BDD : {str(e)}")
@@ -63,8 +107,6 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
 def get_all_products(db: Session = Depends(get_db)):
     products = db.query(Product).all()
     
-    # Pour forcer les accents dans le navigateur, on transforme en dictionnaire 
-    # et on renvoie via JSONResponse avec le charset UTF-8
     products_list = []
     for p in products:
         products_list.append({
