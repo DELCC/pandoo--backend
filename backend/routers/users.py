@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from schemas import UserCreate
@@ -42,4 +42,19 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             "name": new_user.name,
             "email": new_user.email
         }
+    }
+
+@router.get("/by-email/{email}")
+def get_user_by_email(email: str, db: Session = Depends(get_db)):
+    """
+    Recherche un utilisateur par son email (utile pour le polling Google)
+    """
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email
     }
