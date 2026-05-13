@@ -1,4 +1,5 @@
 import os  # <-- AJOUTÉ
+import json # <-- AJOUTÉ
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -8,6 +9,18 @@ from starlette.middleware.sessions import SessionMiddleware
 
 # Autorise le HTTP pour OAuthlib (évite l'erreur mismatching_state en local)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # <-- AJOUTÉ
+
+# --- CHARGEMENT DE LA BASE NUTRITIONNELLE ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_PATH = os.path.join(BASE_DIR, "nutri_data.json")
+
+try:
+    with open(JSON_PATH, "r", encoding="utf-8") as f:
+        nutri_db = json.load(f)
+    print("✅ Base nutritionnelle Pandoo chargée avec succès !")
+except Exception as e:
+    print(f"⚠️ Attention : Impossible de charger nutri_data.json : {e}")
+    nutri_db = {}
 
 # Importation de la base de données et des modèles
 from db.database import engine, get_db 
