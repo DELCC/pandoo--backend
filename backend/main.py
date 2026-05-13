@@ -1,15 +1,20 @@
+import os  # <-- AJOUTÉ
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
+
+# Autorise le HTTP pour OAuthlib (évite l'erreur mismatching_state en local)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # <-- AJOUTÉ
 
 # Importation de la base de données et des modèles
-from db.database import engine, get_db # Ajoute get_db ici
+from db.database import engine, get_db 
 import models
 
 # Importation des routeurs
-from routers import users, children, products
+from routers import users, children, products, auth 
 
 # --- SCHÉMA DE CONNEXION ---
 class LoginData(BaseModel):
@@ -25,7 +30,12 @@ app = FastAPI(
     version="1.1.0"
 )
 
-# --- CONFIGURATION CORS ---
+# --- MIDDLEWARES ---
+
+# Requis pour l'authentification Google (Authlib)
+app.add_middleware(SessionMiddleware, secret_key="pandoo_super_secret_key")
+
+# CONFIGURATION CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,10 +44,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ROUTE LOGIN (À ajouter ici) ---
+# --- ROUTE LOGIN CLASSIQUE ---
 @app.post("/login", tags=["Authentication"])
 def login(data: LoginData, db: Session = Depends(get_db)):
-    # On cherche l'utilisateur par email
     user = db.query(models.User).filter(models.User.email == data.email).first()
     
     if not user:
@@ -57,6 +66,7 @@ def login(data: LoginData, db: Session = Depends(get_db)):
 app.include_router(users.router)
 app.include_router(children.router)
 app.include_router(products.router)
+app.include_router(auth.router)
 
 @app.get("/", tags=["Root"])
 async def read_root():
