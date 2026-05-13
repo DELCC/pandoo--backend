@@ -5,6 +5,7 @@ from app.models import User, Child, Scan, Reward
 from app.api.routes.auth import router as auth_router
 from app.api.routes.children import router as children_router
 from app.api.routes.scans import router as scans_router
+from app.api.routes.rewards import router as rewards_router
 
 app = FastAPI(
     title="Pandoo API",
@@ -15,6 +16,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(children_router)
 app.include_router(scans_router)
+app.include_router(rewards_router)
 
 @app.on_event("startup")
 async def startup():
