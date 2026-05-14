@@ -3,12 +3,14 @@ from typing import List, Optional
 
 # --- SCHÉMAS UTILISATEUR ---
 class UserCreate(BaseModel):
+    username: str = Field(min_length=2, max_length=50) # Ajout du champ username
     name: str = Field(min_length=2, max_length=100)
     email: EmailStr
     password : str
 
 class UserRead(BaseModel):
     id: int
+    username: str # Ajout pour la lecture
     name: str
     email: EmailStr
     
@@ -37,7 +39,7 @@ class ProductCreate(BaseModel):
     name: str
     brand: str
     calories: float
-    glucides: float  # Notre ajout !
+    glucides: float
     calcium: float
     proteins: float
     lipids: float
@@ -50,7 +52,7 @@ class ProductRead(BaseModel):
     name : str
     brand : str
     calories: float
-    glucides: float  # Pour pouvoir les lire
+    glucides: float
     calcium: float
     proteins : float
     lipids : float

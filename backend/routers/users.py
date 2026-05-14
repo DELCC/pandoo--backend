@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from schemas import UserCreate
@@ -21,11 +21,19 @@ def get_users(db: Session = Depends(get_db)):
 @router.post("/")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     """
-    Créer un compte utilisateur
+    Créer un compte utilisateur avec vérification de doublon
     """
+    # 1. Vérifier si le username existe déjà
+    existing_user = db.query(User).filter(User.username == user.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ce nom d'utilisateur est déjà pris."
+        )
 
-    # Création de l'objet SQLAlchemy
+    # 2. Création de l'objet SQLAlchemy (incluant username)
     new_user = User(
+        username=user.username,
         name=user.name,
         email=user.email,
         password=user.password
@@ -40,6 +48,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         "message": "Utilisateur créé avec succès",
         "user": {
             "id": new_user.id,
+            "username": new_user.username,
             "name": new_user.name,
             "email": new_user.email
         }
@@ -50,25 +59,20 @@ def get_user_by_username(username: str, db: Session = Depends(get_db)):
     # On nettoie l'entrée (enlève les espaces)
     search_name = username.strip()
     
-    # On cherche l'utilisateur
-    user = db.query(models.User).filter(models.User.name == search_name).first()
+    # On cherche l'utilisateur par son username unique
+    user = db.query(models.User).filter(models.User.username == search_name).first()
     
-    if not user:
-        # Si pas trouvé par nom, on tente par email par sécurité
-        user = db.query(models.User).filter(models.User.email == search_name).first()
-
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
     
-    # On renvoie l'ID réel pour que Kivy filtre les enfants
     return {
         "id": user.id,
+        "username": user.username,
         "name": user.name
     }
 
 @router.get("/by-email/{email}")
 def get_user_by_email(email: str, db: Session = Depends(get_db)):
-    # On utilise la même logique pour la connexion Google
     search_email = email.strip()
     user = db.query(models.User).filter(models.User.email == search_email).first()
 
@@ -77,5 +81,6 @@ def get_user_by_email(email: str, db: Session = Depends(get_db)):
 
     return {
         "id": user.id,
+        "username": user.username,
         "name": user.name
     }

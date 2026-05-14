@@ -8,6 +8,7 @@ class User(Base):
     __tablename__ = "utilisateurs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True) # Ajout du username unique
     name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
     password: Mapped[str] = mapped_column(String, nullable=False)
@@ -31,7 +32,6 @@ class Product(Base):
     __tablename__ = "produits"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    # AJOUT DE UNIQUE=FALSE (ou retire le) si tu veux pouvoir scanner le même produit plusieurs fois
     barcode: Mapped[int] = mapped_column(BigInteger, index=True)
     
     type: Mapped[str] = mapped_column(String)
@@ -39,7 +39,7 @@ class Product(Base):
     brand: Mapped[str] = mapped_column(String, nullable=False)
 
     calories: Mapped[float] = mapped_column(Float)
-    glucides: Mapped[float] = mapped_column(Float, default=0.0) # <--- LA LIGNE MAGIQUE EST ICI
+    glucides: Mapped[float] = mapped_column(Float, default=0.0)
     calcium: Mapped[float] = mapped_column(Float)
     proteins: Mapped[float] = mapped_column(Float)
     lipids: Mapped[float] = mapped_column(Float)
