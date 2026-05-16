@@ -1,5 +1,6 @@
-from sqlalchemy import String, Integer, Float, ForeignKey, BigInteger
+from sqlalchemy import String, Integer, Float, ForeignKey, BigInteger, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from datetime import date
 
 class Base(DeclarativeBase):
     pass
@@ -20,7 +21,8 @@ class Child(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    age: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Remplacement de age par birthdate
+    birthdate: Mapped[date] = mapped_column(Date, nullable=False)
 
     id_parent: Mapped[int] = mapped_column(ForeignKey("utilisateurs.id"))
     parent: Mapped["User"] = relationship(back_populates="children")
@@ -40,6 +42,10 @@ class Product(Base):
 
     calories: Mapped[float] = mapped_column(Float)
     glucides: Mapped[float] = mapped_column(Float, default=0.0)
+    # AJOUT DES DEUX CHAMPS DEMANDÉS
+    sugars: Mapped[float] = mapped_column(Float, default=0.0)
+    fibers: Mapped[float] = mapped_column(Float, default=0.0)
+    
     calcium: Mapped[float] = mapped_column(Float)
     proteins: Mapped[float] = mapped_column(Float)
     lipids: Mapped[float] = mapped_column(Float)

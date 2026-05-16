@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional
+from datetime import date # Import nécessaire pour la date de naissance
 
 # --- SCHÉMAS UTILISATEUR ---
 class UserCreate(BaseModel):
@@ -17,16 +18,18 @@ class UserRead(BaseModel):
     class Config:
         from_attributes = True
 
-# --- SCHÉMAS ENFANT ---
+# CÔTÉ BACKEND (Serveur)
 class ChildCreate(BaseModel):
-    name : str
-    age : int
-    id_parent : int
+    name: str
+    birthdate: date
+    id_parent: int
+    # SUPPRIME la ligne age: int ici !
 
 class ChildRead(BaseModel):
     id : int
     name : str
-    age : int
+    # Remplacement de age par birthdate
+    birthdate : date
     id_parent : int
     
     class Config:

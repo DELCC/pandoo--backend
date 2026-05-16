@@ -3,13 +3,14 @@ from sqlalchemy.orm import Session
 from db.database import get_db
 import models
 from pydantic import BaseModel
+from datetime import date # Ajout de l'import pour le format Date
 
 router = APIRouter(prefix="/children", tags=["Children"])
 
 # --- SCHÉMA DE DONNÉES (Pydantic) ---
 class ChildCreate(BaseModel):
     name: str
-    age: int
+    birthdate: date  # Remplacement de age par birthdate pour correspondre au modèle SQL
     id_parent: int
 
 # --- ROUTES ---
@@ -25,7 +26,7 @@ def create_child(child_data: ChildCreate, db: Session = Depends(get_db)):
     # 2. Création de l'instance d'enfant liée
     new_child = models.Child(
         name=child_data.name,
-        age=child_data.age,
+        birthdate=child_data.birthdate, # Utilisation de birthdate au lieu de age
         id_parent=child_data.id_parent
     )
     
@@ -39,6 +40,7 @@ def create_child(child_data: ChildCreate, db: Session = Depends(get_db)):
         "child": {
             "id": new_child.id,
             "name": new_child.name,
+            "birthdate": new_child.birthdate,
             "id_parent": new_child.id_parent
         }
     }
