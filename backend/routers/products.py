@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 import json
+from datetime import date # <--- AJOUTÉ
 
 from schemas import ProductCreate, ProductRead
 from models import Product, Child
@@ -55,6 +56,11 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
             detail="Enfant non trouvé"
         )
 
+    # --- CALCUL DE L'ÂGE DYNAMIQUE ---
+    # On calcule l'âge à partir de child.birthdate (assumé objet date/datetime)
+    today = date.today()
+    age_calcule = today.year - child.birthdate.year - ((today.month, today.day) < (child.birthdate.month, child.birthdate.day))
+
     # 2. LOGIQUE ANTI-DOUBLON
     existing_product = db.query(Product).filter(
         Product.barcode == product.barcode,
@@ -63,7 +69,8 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
 
     if existing_product:
         print(f"⚠️ Produit déjà existant : {product.name}")
-        pandoo_result = generer_analyse_pandoo(existing_product, child.age)
+        # On utilise age_calcule au lieu de child.age
+        pandoo_result = generer_analyse_pandoo(existing_product, age_calcule)
         return {
             "product": existing_product,
             "analysis": pandoo_result
@@ -90,7 +97,8 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
         db.refresh(new_product)
         
         # --- GÉNÉRATION DE L'ANALYSE ---
-        pandoo_result = generer_analyse_pandoo(new_product, child.age)
+        # On utilise age_calcule au lieu de child.age
+        pandoo_result = generer_analyse_pandoo(new_product, age_calcule)
         
         print(f"✅ Produit enregistré avec succès : {new_product.name}")
         
@@ -102,7 +110,7 @@ def add_products(id_child: int, product: ProductCreate, db: Session = Depends(ge
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erreur BDD : {str(e)}")
 
-# --- VOIR TOUS LES PRODUITS (CORRECTIF ACCENTS) ---
+# --- VOIR TOUS LES PRODUITS ---
 @router.get("/", response_model=List[ProductRead])
 def get_all_products(db: Session = Depends(get_db)):
     products = db.query(Product).all()
